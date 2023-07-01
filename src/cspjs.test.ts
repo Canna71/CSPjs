@@ -1,3 +1,4 @@
+import { Problem, solve } from "./csp";
 import {dump} from "./index"
 
 
@@ -13,12 +14,13 @@ test("dumps problem", () => {
         variables,
         constraints: [
             {
-                var1: "a",
-                var2: "b",
+                head: "a",
+                tail: "b",
                 predicate: (x:number,y:number) => x===y
             }
         ]
     }
 
     expect(dump(problem)).toBeUndefined();
+    expect(solve(problem)).toEqual({})
 });

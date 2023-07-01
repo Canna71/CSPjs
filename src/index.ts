@@ -1,4 +1,4 @@
-
+import {Problem} from "./csp"
 
 export function dump(problem:Problem): any {
     
