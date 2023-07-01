@@ -1,4 +1,5 @@
-import {Problem} from "./csp"
+import {Problem, solve} from "./csp"
+import { problem } from "./testProblem";
 
 export function dump(problem:Problem): any {
     
@@ -7,3 +8,5 @@ export function dump(problem:Problem): any {
         console.log(`${variable} : {${domain.join(', ')}}`);
     }
 }
+
+solve(problem)

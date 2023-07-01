@@ -55,9 +55,9 @@ function assign(unassigned: Variables, assigned: Variables, problem: Problem):Va
             const val2 = variables[tail]
             // valid values for var2 are the ones for which there are some in var1
             // that satisfy constraint
-            const valids = val2.filter(v2=>{
+            const valids = val2.filter(v2=>
                 val1.some(v1=>predicate(v1,v2))
-            })
+            )
             const removed = valids < val2;
             // if var2 has a smaller domain, we have to check again
             // constraints for which var2 is the source
@@ -109,7 +109,7 @@ function assign(unassigned: Variables, assigned: Variables, problem: Problem):Va
         const newAssigned : Solution = {}
         const newUnassigned: Variables = {}
         for(let variab in enforced){
-            if(assigned.hasOwnProperty(variab)) newAssigned[variab] = enforced[variab]
+            if(tentative.hasOwnProperty(variab)) newAssigned[variab] = tentative[variab]
             else newUnassigned[variab] = enforced[variab]
         }
         return assign(newUnassigned, newAssigned, problem)
