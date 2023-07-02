@@ -9,5 +9,14 @@ test("dumps problem", () => {
     
 
     expect(dump(problem)).toBeUndefined();
-    expect(solve(problem)).toEqual({})
+
+});
+
+test("expets two solutions", () => {
+
+    
+    const solutions = [...solve(problem)]
+    console.log(JSON.stringify(solutions))
+    expect(solutions).toHaveLength(2)
+
 });

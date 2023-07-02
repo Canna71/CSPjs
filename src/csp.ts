@@ -90,7 +90,6 @@ function* assign(unassigned: Variables, assigned: Variables, problem: Problem): 
         // pick next unassigned variable from the one with the 
         // smaller domain
         let nextVar = varWithSmallerDomain(unassigned)
-        console.log(`nextVar: ${nextVar}`)
         // TODO: choose the best value using an heuristic
         // https://stanford.edu/~shervine/teaching/cs-221/cheatsheet-variables-models#:~:text=Least%20constrained%20value%20It%20is,are%20most%20likely%20to%20work.
         const values = unassigned[nextVar]
@@ -124,11 +123,13 @@ function* assign(unassigned: Variables, assigned: Variables, problem: Problem): 
 }
 
 
-export function solve(problem: Problem): Solution {
+export function *solve(problem: Problem):Generator<Solution,void,unknown> {
     const result = assign(problem.variables, {}, problem)
-    console.log(`resul 1: `);
-    console.log(JSON.stringify(result.next()))
-    console.log(`resul 2: `);
-    console.log(JSON.stringify(result.next()))
-    return result
+    for(let variables of result){
+        const solution = Object.keys(variables).reduce<Solution>(
+            (acc:Solution, v:string, i, list) => ({...acc,[v]:variables[v][0]})
+            ,{} as Solution
+        )
+        yield solution
+    }
 }

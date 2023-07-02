@@ -9,4 +9,5 @@ export function dump(problem:Problem): any {
     }
 }
 
-solve(problem)
+const solutions = [...solve(problem)]
+console.log(JSON.stringify(solutions))
