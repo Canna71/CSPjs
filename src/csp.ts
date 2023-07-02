@@ -24,6 +24,45 @@ export interface Solution {
 }
 
 
+/*
+    removes incompatible values from domains
+*/
+export function enforceConstraint(variables: Variables, problem: Problem):Variables {
+
+
+    function iterate(variables: Variables, constraints: Constraints) {
+        if (constraints.length === 0) {
+            return variables;
+        }
+
+        const [constraint, ...queueTail] = constraints;
+        const { head, tail, predicate } = constraint;
+
+        // remove inconsistent values 
+        const val1 = variables[head]
+        const val2 = variables[tail]
+        // valid values for var2 are the ones for which there are some in var1
+        // that satisfy constraint
+        const valids = val2.filter(v2 =>
+            val1.some(v1 => predicate(v1, v2))
+        )
+        const removed = valids < val2;
+        // if var2 has a smaller domain, we have to check again
+        // constraints for which var2 is the source
+        const nextConstraints = removed ? queueTail.concat(
+            problem.constraints.filter(c => c.head === tail)
+        ) : queueTail
+        const nextVariables = { ...variables, [tail]: valids }
+        return iterate(nextVariables, nextConstraints)
+    }
+
+    
+    // assigned are single valies domain here
+    // for(let ass in assigned) variables[ass] = [assigned[ass]]
+    return iterate(variables, problem.constraints)
+
+}
+
 function* assign(unassigned: Variables, assigned: Variables, problem: Problem): Generator<Variables, Variables, unknown> {
 
     function varWithSmallerDomain(variables: Variables): string {
@@ -39,41 +78,7 @@ function* assign(unassigned: Variables, assigned: Variables, problem: Problem): 
         return choice
     }
 
-    function enforceConstraint(unassigned: Variables, assigned: Variables) {
 
-
-        function iterate(variables: Variables, constraints: Constraints) {
-            if (constraints.length === 0) {
-                return variables;
-            }
-
-            const [constraint, ...queueTail] = constraints;
-            const { head, tail, predicate } = constraint;
-
-            // remove inconsistent values 
-            const val1 = variables[head]
-            const val2 = variables[tail]
-            // valid values for var2 are the ones for which there are some in var1
-            // that satisfy constraint
-            const valids = val2.filter(v2 =>
-                val1.some(v1 => predicate(v1, v2))
-            )
-            const removed = valids < val2;
-            // if var2 has a smaller domain, we have to check again
-            // constraints for which var2 is the source
-            const nextConstraints = removed ? queueTail.concat(
-                problem.constraints.filter(c => c.head === tail)
-            ) : queueTail
-            const nextVariables = { ...variables, [tail]: valids }
-            return iterate(nextVariables, nextConstraints)
-        }
-
-        const variables = { ...unassigned, ...assigned }
-        // assigned are single valies domain here
-        // for(let ass in assigned) variables[ass] = [assigned[ass]]
-        return iterate(variables, problem.constraints)
-
-    }
 
     function checkEmptyDomains(variables: Variables): boolean {
         for (let v in variables) {
@@ -98,7 +103,8 @@ function* assign(unassigned: Variables, assigned: Variables, problem: Problem): 
 
         for (let value of values) {
             const tentative = { ...assigned, [nextVar]: [value] }
-            const enforced = enforceConstraint(nextUnassigned, tentative)
+            const variables = { ...nextUnassigned, ...tentative }
+            const enforced = enforceConstraint(variables, problem)
 
             const someEmpty = checkEmptyDomains(enforced);
             if (someEmpty) continue;
