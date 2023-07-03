@@ -27,15 +27,15 @@ export interface Solution {
 /*
     removes incompatible values from domains
 */
-export function enforceConstraint(variables: Variables, problem: Problem):Variables {
+export function enforceConstraint(variables: Variables, constraints: Constraints):Variables {
 
 
-    function iterate(variables: Variables, constraints: Constraints) {
-        if (constraints.length === 0) {
+    function iterate(variables: Variables, constraintQueue: Constraints, allConstraints: Constraints) {
+        if (constraintQueue.length === 0) {
             return variables;
         }
 
-        const [constraint, ...queueTail] = constraints;
+        const [constraint, ...queueTail] = constraintQueue;
         const { head, tail, predicate } = constraint;
 
         // remove inconsistent values 
@@ -46,20 +46,20 @@ export function enforceConstraint(variables: Variables, problem: Problem):Variab
         const valids = val2.filter(v2 =>
             val1.some(v1 => predicate(v1, v2))
         )
-        const removed = valids < val2;
+        const removed = valids.length < val2.length;
         // if var2 has a smaller domain, we have to check again
         // constraints for which var2 is the source
         const nextConstraints = removed ? queueTail.concat(
-            problem.constraints.filter(c => c.head === tail)
+            allConstraints.filter(c => c.head === tail)
         ) : queueTail
         const nextVariables = { ...variables, [tail]: valids }
-        return iterate(nextVariables, nextConstraints)
+        return iterate(nextVariables, nextConstraints, allConstraints)
     }
 
     
     // assigned are single valies domain here
     // for(let ass in assigned) variables[ass] = [assigned[ass]]
-    return iterate(variables, problem.constraints)
+    return iterate(variables, constraints, constraints)
 
 }
 
@@ -104,7 +104,7 @@ function* assign(unassigned: Variables, assigned: Variables, problem: Problem): 
         for (let value of values) {
             const tentative = { ...assigned, [nextVar]: [value] }
             const variables = { ...nextUnassigned, ...tentative }
-            const enforced = enforceConstraint(variables, problem)
+            const enforced = enforceConstraint(variables, problem.constraints)
 
             const someEmpty = checkEmptyDomains(enforced);
             if (someEmpty) continue;

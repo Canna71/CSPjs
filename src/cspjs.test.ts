@@ -25,7 +25,7 @@ test("expcts no solutions", () => {
 test("enforce constraints", () => {
 
     let variables = {...problem2.variables,"a":[1]}
-    let enforced = enforceConstraint(variables, problem1);
+    let enforced = enforceConstraint(variables, problem1.constraints);
    
     expect(enforced["b"]).toHaveLength(1)
     expect(enforced["b"][0]).toBe(1)
