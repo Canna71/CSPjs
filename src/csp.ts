@@ -1,3 +1,5 @@
+import { variables } from "./testProblem"
+
 export type Domain<T> = T[]
 
 export type Variable = string
@@ -27,39 +29,48 @@ export interface Solution {
 /*
     removes incompatible values from domains
 */
-export function enforceConstraint(variables: Variables, constraints: Constraints):Variables {
+export function enforceConstraint(_variables: Variables, constraints: Constraints):Variables {
 
 
-    function iterate(variables: Variables, constraintQueue: Constraints, allConstraints: Constraints) {
-        if (constraintQueue.length === 0) {
-            return variables;
+    function iterate() {
+        
+        let variables: Variables = _variables;
+        let checkedConstraint: Constraints = [];
+        let constraintQueue: Constraints = constraints;
+        let allConstraints: Constraints = constraints;
+
+        while(constraintQueue.length > 0){
+            const [constraint, ...queueTail] = constraintQueue;
+            const { head, tail, predicate } = constraint;
+            checkedConstraint.push(constraint)
+            // remove inconsistent values 
+            const val1 = variables[head]
+            const val2 = variables[tail]
+            // valid values for var2 are the ones for which there are some in var1
+            // that satisfy constraint
+            const valids = val2.filter(v2 =>
+                val1.some(v1 => predicate(v1, v2))
+            )
+            const removed = valids.length < val2.length;
+            // if var2 has a smaller domain, we have to check again
+            // constraints for which var2 is the source
+            constraintQueue = removed ? queueTail.concat(
+                checkedConstraint.filter(c => c.head === tail)
+            ) : queueTail
+
+            checkedConstraint = removed ? checkedConstraint.filter(c => c.head !== tail) : checkedConstraint
+    
+            variables = { ...variables, [tail]: valids };
+           
         }
 
-        const [constraint, ...queueTail] = constraintQueue;
-        const { head, tail, predicate } = constraint;
-
-        // remove inconsistent values 
-        const val1 = variables[head]
-        const val2 = variables[tail]
-        // valid values for var2 are the ones for which there are some in var1
-        // that satisfy constraint
-        const valids = val2.filter(v2 =>
-            val1.some(v1 => predicate(v1, v2))
-        )
-        const removed = valids.length < val2.length;
-        // if var2 has a smaller domain, we have to check again
-        // constraints for which var2 is the source
-        const nextConstraints = removed ? queueTail.concat(
-            allConstraints.filter(c => c.head === tail)
-        ) : queueTail
-        const nextVariables = { ...variables, [tail]: valids }
-        return iterate(nextVariables, nextConstraints, allConstraints)
+        return variables;
     }
 
     
     // assigned are single valies domain here
     // for(let ass in assigned) variables[ass] = [assigned[ass]]
-    return iterate(variables, constraints, constraints)
+    return iterate()
 
 }
 
