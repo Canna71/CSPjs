@@ -29,15 +29,15 @@ export interface Solution {
 /*
     removes incompatible values from domains
 */
-export function enforceConstraint(_variables: Variables, constraints: Constraints):Variables {
+export function enforceConstraint(_variables: Variables, constraints: Constraints, remainingConstraints: Constraints=[]):Variables {
 
 
     function iterate() {
         
         let variables: Variables = _variables;
-        let checkedConstraint: Constraints = [];
+        let checkedConstraint: Constraints = remainingConstraints;
         let constraintQueue: Constraints = constraints;
-        let allConstraints: Constraints = constraints;
+        // let allConstraints: Constraints = constraints;
 
         while(constraintQueue.length > 0){
             const [constraint, ...queueTail] = constraintQueue;
@@ -100,7 +100,6 @@ function* assign(unassigned: Variables, assigned: Variables, problem: Problem): 
 
     if (Object.keys(unassigned).length === 0) {
         // we have one solution
-        // TODO: keep track in order to find next one if any
         yield assigned
     } else {
         // pick next unassigned variable from the one with the 
@@ -111,11 +110,15 @@ function* assign(unassigned: Variables, assigned: Variables, problem: Problem): 
         const values = unassigned[nextVar]
         // remove next var from unassigned
         const { [nextVar]: _, ...nextUnassigned } = unassigned;
+        const constraintsToCheck = problem.constraints.filter(({head,tail,predicate})=>head===nextVar)
+        const remainingConstraints = problem.constraints.filter(({head,tail,predicate})=>head!==nextVar)
 
         for (let value of values) {
             const tentative = { ...assigned, [nextVar]: [value] }
             const variables = { ...nextUnassigned, ...tentative }
-            const enforced = enforceConstraint(variables, problem.constraints)
+
+
+            const enforced = enforceConstraint(variables, constraintsToCheck, remainingConstraints)
 
             const someEmpty = checkEmptyDomains(enforced);
             if (someEmpty) continue;
