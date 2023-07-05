@@ -1,4 +1,5 @@
 import { variables } from "./testProblem"
+import { cartesian } from "./utils"
 
 export type Domain<T> = T[]
 
@@ -8,35 +9,52 @@ export type Variables = {
     [key: string]: Domain<any>
 }
 
-export type Constraint<T> = {
-    head: Variable,
-    tail: Variable,
-    predicate: (x: T, y: T) => boolean
+export type NaryConstraint = {
+    variables: any[],
+    predicate: (variables:any[]) => boolean
 }
 
-export type Constraints = Constraint<any>[]
+export type BinaryConstraint = {
+    head: Variable,
+    tail: Variable,
+    predicate: (x: any, y: any) => boolean
+}
+
+export type Constraint = NaryConstraint | BinaryConstraint
+export type Constraints = Constraint[]
+export type BinaryConstraints = ( BinaryConstraint)[]
 
 export interface Problem {
     variables: Variables,
     constraints: Constraints
 }
 
+export interface BinaryProblem {
+    variables: Variables,
+    constraints: BinaryConstraints
+}
+
 export interface Solution {
     [key: string]: any
 }
 
-
+const isNaryConstraint = (c: Constraint): c is NaryConstraint => {
+    return Array.isArray((c as NaryConstraint).variables)
+}
+const isBinaryConstraint = (c: Constraint): c is BinaryConstraint => {
+    return (c as BinaryConstraint).head !== undefined
+}
 /*
     removes incompatible values from domains
 */
-export function enforceConstraint(_variables: Variables, constraints: Constraints, remainingConstraints: Constraints=[]):Variables {
+export function enforceConstraint(_variables: Variables, constraints: BinaryConstraints, remainingConstraints: BinaryConstraints=[]):Variables {
 
 
     function iterate() {
         
         let variables: Variables = _variables;
-        let checkedConstraint: Constraints = remainingConstraints;
-        let constraintQueue: Constraints = constraints;
+        let checkedConstraint: BinaryConstraints = remainingConstraints;
+        let constraintQueue: BinaryConstraints = constraints;
         // let allConstraints: Constraints = constraints;
 
         while(constraintQueue.length > 0){
@@ -74,7 +92,7 @@ export function enforceConstraint(_variables: Variables, constraints: Constraint
 
 }
 
-function* assign(unassigned: Variables, assigned: Variables, problem: Problem): Generator<Variables, Variables, unknown> {
+function* assign(unassigned: Variables, assigned: Variables, problem: BinaryProblem): Generator<Variables, Variables, unknown> {
 
     function varWithSmallerDomain(variables: Variables): string {
         let choice = "NOTVALID"
@@ -143,7 +161,7 @@ function* assign(unassigned: Variables, assigned: Variables, problem: Problem): 
 }
 
 
-export function *solve(problem: Problem):Generator<Solution,void,unknown> {
+export function *solve(problem: BinaryProblem):Generator<Solution,void,unknown> {
     const result = assign(problem.variables, {}, problem)
     for(let variables of result){
         const solution = Object.keys(variables).reduce<Solution>(
@@ -152,4 +170,40 @@ export function *solve(problem: Problem):Generator<Solution,void,unknown> {
         )
         yield solution
     }
+}
+
+export function binarize(problem: Problem):BinaryProblem {
+    // selects binary constraints
+    const naryConstraints = problem.constraints.filter(isNaryConstraint)
+    
+    const binaryEquiv = naryConstraints.reduce((ob,nc,i)=>{
+        const ncv = nc.variables;
+        const domains = ncv.map(v=>problem.variables[v])
+        const domain:any[][] = cartesian(...domains)
+        const actualDomain = domain.filter(el => nc.predicate(el))
+        const evName = `_ev_${i}`
+        const constraints: BinaryConstraints = ncv.map((v,i) => ({
+            head: v,
+            tail: evName,
+            predicate: (h:any,t:any[]) => h === t[i]
+        })).concat(ncv.map((v,i) => ({
+            head: evName,
+            tail: v,
+            predicate: (t:any[], h:any) => h === t[i]
+        })));
+
+        return {
+            variables: {...ob.variables, [evName]:actualDomain},
+            constraints: [...ob.constraints, ...constraints]
+        }
+    },{variables:{},constraints:[]} as BinaryProblem)
+
+    return {
+        variables: {...problem.variables, ...binaryEquiv.variables},
+        constraints: [
+            ...problem.constraints.filter(isBinaryConstraint),
+            ...binaryEquiv.constraints
+        ]
+    }
+
 }

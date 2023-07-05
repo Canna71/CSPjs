@@ -1,4 +1,4 @@
-import { Problem, enforceConstraint, solve } from "./csp";
+import { Problem, BinaryProblem, enforceConstraint, solve, binarize } from "./csp";
 // import {dump} from "./index"
 import { problem1, problem2 } from "./testProblem";
 
@@ -30,5 +30,22 @@ test("enforce constraints", () => {
     expect(enforced["b"]).toHaveLength(1)
     expect(enforced["b"][0]).toBe(1)
 
+});
+
+test("binarize constraints", () => {
+
+    let variables = {"x": [1,2], "y":[3,4], "z":[5,6]}
+    let constraints = [
+        {variables:["x","y","z"], predicate:([x,y,z]:any[])=>x+y===z},
+        {variables:["x","y"], predicate:([x,y]:any[])=>x<y}
+    ]
+    const binaryProblem = binarize({
+        variables,constraints
+    })
+
+    console.log(JSON.stringify(binaryProblem))
+   
+    expect(binaryProblem).toBeDefined()
+    
 
 });
