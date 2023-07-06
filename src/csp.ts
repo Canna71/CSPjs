@@ -161,13 +161,15 @@ function* assign(unassigned: Variables, assigned: Variables, problem: BinaryProb
 }
 
 
-export function *solve(problem: BinaryProblem):Generator<Solution,void,unknown> {
-    const result = assign(problem.variables, {}, problem)
+export function *solve(problem: Problem):Generator<Solution,void,unknown> {
+    const binaryProblem = binarize(problem)
+    const result = assign(problem.variables, {}, binaryProblem)
     for(let variables of result){
         const solution = Object.keys(variables).reduce<Solution>(
             (acc:Solution, v:string, i, list) => ({...acc,[v]:variables[v][0]})
             ,{} as Solution
         )
+        // TODO: leave only variables present in original problem
         yield solution
     }
 }
