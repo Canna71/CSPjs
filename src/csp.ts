@@ -92,7 +92,7 @@ export function enforceConstraint(_variables: Variables, constraints: BinaryCons
 
 }
 
-function* assign(unassigned: Variables, assigned: Variables, problem: BinaryProblem): Generator<Variables, Variables, unknown> {
+function* assign(unassigned: Variables, assigned: Variables, constraints: BinaryConstraints): Generator<Variables, Variables, unknown> {
 
     function varWithSmallerDomain(variables: Variables): string {
         let choice = "NOTVALID"
@@ -128,8 +128,8 @@ function* assign(unassigned: Variables, assigned: Variables, problem: BinaryProb
         const values = unassigned[nextVar]
         // remove next var from unassigned
         const { [nextVar]: _, ...nextUnassigned } = unassigned;
-        const constraintsToCheck = problem.constraints.filter(({head,tail,predicate})=>head===nextVar)
-        const remainingConstraints = problem.constraints.filter(({head,tail,predicate})=>head!==nextVar)
+        const constraintsToCheck = constraints.filter(({head,tail,predicate})=>head===nextVar)
+        const remainingConstraints = constraints.filter(({head,tail,predicate})=>head!==nextVar)
 
         for (let value of values) {
             const tentative = { ...assigned, [nextVar]: [value] }
@@ -148,7 +148,7 @@ function* assign(unassigned: Variables, assigned: Variables, problem: BinaryProb
                 if (tentative.hasOwnProperty(variab)) newAssigned[variab] = tentative[variab]
                 else newUnassigned[variab] = enforced[variab]
             }
-            yield* assign(newUnassigned, newAssigned, problem)
+            yield* assign(newUnassigned, newAssigned, constraints)
 
         }
     }
@@ -163,7 +163,7 @@ function* assign(unassigned: Variables, assigned: Variables, problem: BinaryProb
 
 export function *solve(problem: Problem):Generator<Solution,void,unknown> {
     const binaryProblem = binarize(problem)
-    const result = assign(problem.variables, {}, binaryProblem)
+    const result = assign(binaryProblem.variables, {}, binaryProblem.constraints)
     for(let variables of result){
         const solution = Object.keys(variables).reduce<Solution>(
             (acc:Solution, v:string, i, list) => ({...acc,[v]:variables[v][0]})
