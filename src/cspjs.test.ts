@@ -36,8 +36,8 @@ test("binarize constraints", () => {
 
     let variables = {"x": [1,2], "y":[3,4], "z":[5,6]}
     let constraints = [
-        {variables:["x","y","z"], predicate:([x,y,z]:any[])=>x+y===z},
-        {variables:["x","y"], predicate:([x,y]:any[])=>x<y}
+        {variables:["x","y","z"], predicate:(x: number,y: number,z: number)=>x+y===z},
+        {variables:["x","y"], predicate:(x: number,y: number)=>x<y}
     ]
     const binaryProblem = binarize({
         variables,constraints
