@@ -1,5 +1,5 @@
 import { variables } from "./testProblem"
-import { cartesian } from "./utils"
+import { cartesian, filteredCartesianProduct } from "./utils"
 
 export type Domain<T> = T[]
 
@@ -181,8 +181,12 @@ export function binarize(problem: Problem):BinaryProblem {
     const binaryEquiv = naryConstraints.reduce((ob,nc,i)=>{
         const ncv = nc.variables;
         const domains = ncv.map(v=>problem.variables[v])
-        const domain:any[][] = cartesian(...domains)
-        const actualDomain = domain.filter(el => nc.predicate(...el))
+
+        // const domain:any[][] = cartesian(...domains)
+        // const actualDomain = domain.filter(el => nc.predicate(...el))
+
+        const actualDomain = Array.from(filteredCartesianProduct(domains, nc.predicate))
+
         const evName = `_ev_${i}`
         const constraints: BinaryConstraints = ncv.map((v,i) => ({
             head: v,
