@@ -44,7 +44,7 @@ export interface Solution {
 }
 
 const isNaryConstraint = (c: Constraint): c is NaryConstraint => {
-    return Array.isArray((c as NaryConstraint).variables)
+    return Array.isArray((c as NaryConstraint).variables) && ((c as NaryConstraint).predicate !== undefined)
 }
 const isBinaryConstraint = (c: Constraint): c is BinaryConstraint => {
     return (c as BinaryConstraint).head !== undefined
