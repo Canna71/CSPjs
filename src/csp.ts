@@ -11,7 +11,12 @@ export type Variables = {
 
 export type NaryConstraint = {
     variables: any[],
-    predicate: (...variables:any[]) => boolean
+    predicate: (...variables:any[]) => boolean,
+}
+
+export type EncapsulatedConstraint = {
+    variables: any[],
+    domain: Domain<any>
 }
 
 export type BinaryConstraint = {
@@ -20,7 +25,7 @@ export type BinaryConstraint = {
     predicate: (x: any, y: any) => boolean
 }
 
-export type Constraint = NaryConstraint | BinaryConstraint
+export type Constraint = NaryConstraint | BinaryConstraint | EncapsulatedConstraint
 export type Constraints = Constraint[]
 export type BinaryConstraints = ( BinaryConstraint)[]
 
@@ -43,6 +48,9 @@ const isNaryConstraint = (c: Constraint): c is NaryConstraint => {
 }
 const isBinaryConstraint = (c: Constraint): c is BinaryConstraint => {
     return (c as BinaryConstraint).head !== undefined
+}
+const isEncapsulatedConstraint = (c: Constraint): c is EncapsulatedConstraint => {
+    return (c as EncapsulatedConstraint).domain !== undefined
 }
 /*
     removes incompatible values from domains
@@ -204,11 +212,31 @@ export function binarize(problem: Problem):BinaryProblem {
         }
     },{variables:{},constraints:[]} as BinaryProblem)
 
+    const encapsulated = problem.constraints.filter(isEncapsulatedConstraint)
+        .reduce((ob,ec,i)=>{
+            const ncv = ec.variables;
+            const evName = `_ec_${i}`;
+            const constraints: BinaryConstraints = ncv.map((v,i) => ({
+                head: v,
+                tail: evName,
+                predicate: (h:any,t:any[]) => h === t[i]
+            })).concat(ncv.map((v,i) => ({
+                head: evName,
+                tail: v,
+                predicate: (t:any[], h:any) => h === t[i]
+            })));
+            return {
+                variables: {...ob.variables, [evName]:ec.domain},
+                constraints: [...ob.constraints, ...constraints]
+            }
+        },{variables:{},constraints:[]} as BinaryProblem)
+
     return {
-        variables: {...problem.variables, ...binaryEquiv.variables},
+        variables: {...problem.variables, ...binaryEquiv.variables, ...encapsulated.variables},
         constraints: [
             ...problem.constraints.filter(isBinaryConstraint),
-            ...binaryEquiv.constraints
+            ...binaryEquiv.constraints,
+            ...encapsulated.constraints
         ]
     }
 
