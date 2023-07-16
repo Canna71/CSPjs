@@ -55,7 +55,7 @@ const isEncapsulatedConstraint = (c: Constraint): c is EncapsulatedConstraint =>
 /*
     removes incompatible values from domains
 */
-export function enforceConstraint(_variables: Variables, constraints: BinaryConstraints, remainingConstraints: BinaryConstraints=[]):Variables {
+export function enforceConstraint(_variables: Variables, constraints: BinaryConstraints, remainingConstraints: BinaryConstraints=[], stopEarly=true):Variables {
 
 
     function iterate() {
@@ -64,8 +64,8 @@ export function enforceConstraint(_variables: Variables, constraints: BinaryCons
         let checkedConstraint: BinaryConstraints = remainingConstraints;
         let constraintQueue: BinaryConstraints = constraints;
         // let allConstraints: Constraints = constraints;
-
-        while(constraintQueue.length > 0){
+        let valid = true
+        while(constraintQueue.length > 0 && (valid || !stopEarly)){
             const [constraint, ...queueTail] = constraintQueue;
             const { head, tail, predicate } = constraint;
             checkedConstraint.push(constraint)
@@ -78,6 +78,7 @@ export function enforceConstraint(_variables: Variables, constraints: BinaryCons
                 val1.some(v1 => predicate(v1, v2))
             )
             const removed = valids.length < val2.length;
+            valid = valids.length > 0;
             // if var2 has a smaller domain, we have to check again
             // constraints for which var2 is the source
             constraintQueue = removed ? queueTail.concat(
@@ -131,6 +132,8 @@ function* assign(unassigned: Variables, assigned: Variables, constraints: Binary
         // pick next unassigned variable from the one with the 
         // smaller domain
         let nextVar = varWithSmallerDomain(unassigned)
+        // console.log(`nextVar: ${nextVar}`)
+        console.log(`assigned #: ${Object.keys(assigned).length}\r`);
         // TODO: choose the best value using an heuristic
         // https://stanford.edu/~shervine/teaching/cs-221/cheatsheet-variables-models#:~:text=Least%20constrained%20value%20It%20is,are%20most%20likely%20to%20work.
         const values = unassigned[nextVar]
@@ -143,7 +146,7 @@ function* assign(unassigned: Variables, assigned: Variables, constraints: Binary
             const tentative = { ...assigned, [nextVar]: [value] }
             const variables = { ...nextUnassigned, ...tentative }
 
-
+            // note: we use stopEarly so we will get onlt one invalid domain
             const enforced = enforceConstraint(variables, constraintsToCheck, remainingConstraints)
 
             const someEmpty = checkEmptyDomains(enforced);
