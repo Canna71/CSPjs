@@ -108,6 +108,9 @@ function* assign(unassigned: Variables, assigned: Variables, constraints: Binary
         let minSize = Number.MAX_SAFE_INTEGER
         for (let v in variables) {
             let domainSize = variables[v].length
+            if(domainSize>0 && Array.isArray(variables[v][0])) {
+                domainSize = domainSize / variables[v][0].length
+            }
             if (domainSize < minSize) {
                 minSize = domainSize
                 choice = v
@@ -133,7 +136,7 @@ function* assign(unassigned: Variables, assigned: Variables, constraints: Binary
         // smaller domain
         let nextVar = varWithSmallerDomain(unassigned)
         // console.log(`nextVar: ${nextVar}`)
-        console.log(`assigned #: ${Object.keys(assigned).length}\r`);
+        // console.log(`assigned #: ${Object.keys(assigned).length}\r`);
         // TODO: choose the best value using an heuristic
         // https://stanford.edu/~shervine/teaching/cs-221/cheatsheet-variables-models#:~:text=Least%20constrained%20value%20It%20is,are%20most%20likely%20to%20work.
         const values = unassigned[nextVar]
