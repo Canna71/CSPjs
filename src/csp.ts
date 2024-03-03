@@ -101,23 +101,25 @@ export function enforceConstraint(_variables: Variables, constraints: BinaryCons
 
 }
 
+export function varWithSmallerDomain(variables: Variables): string {
+    let choice = "NOTVALID"
+    let minSize = Number.MAX_SAFE_INTEGER
+    for (let v in variables) {
+        let domainSize = variables[v].length
+        if(domainSize>0 && Array.isArray(variables[v][0])) {
+            domainSize = domainSize / variables[v][0].length
+        }
+        if (domainSize < minSize) {
+            minSize = domainSize
+            choice = v
+        }
+    }
+    return choice
+}
+
 function* assign(unassigned: Variables, assigned: Variables, constraints: BinaryConstraints): Generator<Variables, Variables, unknown> {
 
-    function varWithSmallerDomain(variables: Variables): string {
-        let choice = "NOTVALID"
-        let minSize = Number.MAX_SAFE_INTEGER
-        for (let v in variables) {
-            let domainSize = variables[v].length
-            if(domainSize>0 && Array.isArray(variables[v][0])) {
-                domainSize = domainSize / variables[v][0].length
-            }
-            if (domainSize < minSize) {
-                minSize = domainSize
-                choice = v
-            }
-        }
-        return choice
-    }
+
 
 
 
